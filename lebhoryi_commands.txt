@@ -1,0 +1,181 @@
+
+# 0x01 training
+
+# DNN
+python3 train.py \
+--train_dir=./train_model/326_dnn \
+--summaries_dir=./retrain_logs/326_dnn
+
+# DSCNN
+python3 train.py --model_architecture=ds_cnn \
+--learning_rate=0.0005,0.0001,0.00002 \
+--how_many_training_steps=15000,300,300 \
+--summaries_dir=./retrain_logs/327_dscnn \
+--train_dir=./train_model/327_dscnn
+
+===========================================================================================
+
+# 0x02 .ckpt to .pb
+
+python3 freeze.py \
+--model_architecture cnn2 \
+--data_dir ../data/ \
+--wanted_words yes,no,up,down,left,right,on,off,stop,go,nihaoxr,xrxr \
+--model_size_info 28 10 4 1 1 30 10 4 2 1 16 128 \
+--dct_coefficient_count 13 \
+--window_size_ms 40 \
+--window_stride_ms 20 \
+--checkpoint=./train_model/cnn_with_fs_20_fsize_40_dct_13/best/cnn2_9154.ckpt-11600 \
+--output_file=./pb/cnn_with_fs_20_fsize_40_dct_13.pb
+
+python3 freeze.py \
+--model_architecture ds_cnn \
+--data_dir ../data/ \
+--wanted_words=xrxr,nihaoxr,forward,down,visual,backward,cat,stop,off,eight,happy,five,bird,go,no,one,six,learn,left,house \
+--model_size_info 6 172 5 3 1 1 172 3 3 1 1 172 5 3 1 1 172 10 3 1 1 172 5 3 1 1 172 5 3 1 1 \
+--dct_coefficient_count 13 \
+--window_size_ms 40 \
+--window_stride_ms 20 \
+--silence_percentage=5 \
+--unknown_percentage=5 \
+--checkpoint=train_model/804_dscnn_with_20_labels/best/ds_cnn_9442.ckpt-15200 \
+--output_file=pb/804_dscnn_with_20_labels.pb
+
+===========================================================================================
+
+# 0x03 test label
+
+python3 label_wav.py \
+--graph=./pb/722_dscnn_with_20_labels.pb \
+--labels=./train_model/722_dscnn_with_20_labels/ds_cnn_labels.txt \
+--wav=../local_data/web_data_train/nihaoxr_1s/1.wav
+
+===========================================================================================
+
+# 0x04 test model 自定义的测试集
+
+python3 ./utils/test_model.py \
+--dir_path=../local_data/test_wav \
+--graph=./pb/722_dscnn_with_20_labels.pb \
+--labels=./train_model/722_dscnn_with_20_labels/ds_cnn_labels.txt
+
+===========================================================================================
+
+# 0x05 量化int8 获取反量化之后的一个准确值
+
+python3 quant_test.py \
+--data_dir ../data \
+--wanted_words=xrxr,nihaoxr,forward,down,visual,backward,cat,stop,off,eight,happy,five,bird,go,no,one,six,learn,left,house \
+--model_size_info 5 64 10 4 2 1 64 3 3 1 1 64 3 3 1 1 64 3 3 1 1 64 3 3 1 1 \
+--dct_coefficient_count 13 \
+--window_size_ms 40 \
+--window_stride_ms 20 \
+--silence_percentage=5 \
+--unknown_percentage=5 \
+--model_architecture=ds_cnn \
+--batch_size 100 \
+--checkpoint=train_model/817_dscnn/best/ds_cnn_9056.ckpt-13600_bnfused \
+--output=weights_h/817_dscnn
+
+===========================================================================================
+
+# 0x06 单个文件获取网络中间变量 dnn & cnn
+
+python3 utils/get_output_from_network.py \
+--model_architecture=cnn \
+--wav_path=../data/nihaoxr/2.wav \
+--weight_path=./weights_h/526_cnn/without_quant.h \
+--variables_path=./weights_h/526_cnn/name.txt \
+--every_network_output=./weights_h/526_cnn/every_network_output.txt
+--dct_coefficient_count=10 \
+--window_size_ms=40 \
+--window_stride_ms=40 \
+--model_size_info 28 10 4 1 1 30 10 4 2 1 16 128
+
+# 0x07 批量数据输入 获取网络的中间层输出值，最大最小
+
+python3 utils/official_get_layers_output.py \
+--data_dir ../data \
+--wanted_words yes,no,up,down,left,right,on,off,stop,go,nihaoxr,xrxr \
+--model_size_info 28 10 4 1 1 30 10 4 2 1 16 128 \
+--dct_coefficient_count 13 \
+--window_size_ms 40 \
+--window_stride_ms 20 \
+--model_architecture cnn2 \
+--checkpoint ./train_model/707_dscnn_with_4_labels/best/ds_cnn_9885.ckpt-800_bnfused \
+--output ./weights_h/707_dscnn_with_4_labels/every_network_output.txt
+
+dscnn
+
+python3 utils/official_get_layers_output.py \
+--data_dir ../data \
+--wanted_words=xrxr,nihaoxr,forward,down,visual,backward,cat,stop,off,eight,happy,five,bird,go,no,one,six,learn,left,house \
+--model_size_info 5 64 10 4 2 1 64 3 3 1 1 64 3 3 1 1 64 3 3 1 1 64 3 3 1 1 \
+--dct_coefficient_count 13 \
+--window_size_ms 40 \
+--window_stride_ms 20 \
+--silence_percentage=5 \
+--unknown_percentage=5 \
+--model_architecture=ds_cnn \
+--batch_size 100 \
+--checkpoint=train_model/817_dscnn/best/ds_cnn_9056.ckpt-13600_bnfused \
+--output=weights_h/817_dscnn/every_network_output.txt
+
+===========================================================================================
+
+# 0x08 fold BN; DSCNN model
+自动生成一个 FLAGS.checkpoint+'_bnfused'的文件，仅保留 W 和 b
+
+python3 ./fold_batchnorm.py \
+--data_dir ..data \
+--dct_coefficient_count 13 \
+--window_size_ms 40 \
+--window_stride_ms 20 \
+--wanted_words=xrxr,nihaoxr,forward,down,visual,backward,cat,stop,off,eight,happy,five,bird,go,no,one,six,learn,left,house \
+--model_size_info 5 64 10 4 2 1 64 3 3 1 1 64 3 3 1 1 64 3 3 1 1 64 3 3 1 1 \
+--silence_percentage=5 \
+--unknown_percentage=5 \
+--batch_size 100 \
+--checkpoint=train_model/817_dscnn/best/ds_cnn_9056.ckpt-13600 \
+--model_architecture ds_cnn
+
+
+python3 ./utils/fold_batchnorm_cnn.py \
+--data_dir ../data \
+--dct_coefficient_count 13 \
+--window_size_ms 40 \
+--window_stride_ms 20 \
+--model_architecture cnn2 \
+--checkpoint ./train_model/629_cnn_with_fs20_dct13/best/cnn2_9154.ckpt-11600 \
+--model_size_info 28 10 4 1 1 30 10 4 2 1 16 128
+
+
+============================================================================================
+
+# 0x09 混淆矩阵
+
+> ds_cnn
+
+你好小睿 小睿小睿 others
+
+data_size = 515
+Confusion Matrix is:
+[[167  10   3]
+ [  1 197   0]
+ [ 19   6 112]]
+The accuracy is 92.43%.
+The precision is 93.06%.
+The recall is 91.34%.
+The f1 scores is 91.92%.
+
+> cnn
+
+Confusion Matrix is:
+[[131  24  25]
+ [  0 189   9]
+ [  6   8 123]]
+The accuracy is 86.02%.
+The precision is 86.49%.
+The recall is 86.00%.
+The f1 scores is 85.51%.
+

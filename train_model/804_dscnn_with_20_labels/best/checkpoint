@@ -1,0 +1,6 @@
+model_checkpoint_path: "ds_cnn_9446.ckpt-13200"
+all_model_checkpoint_paths: "ds_cnn_9383.ckpt-10000"
+all_model_checkpoint_paths: "ds_cnn_9406.ckpt-10400"
+all_model_checkpoint_paths: "ds_cnn_9415.ckpt-10800"
+all_model_checkpoint_paths: "ds_cnn_9439.ckpt-11600"
+all_model_checkpoint_paths: "ds_cnn_9446.ckpt-13200"

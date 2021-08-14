@@ -1,0 +1,2 @@
+model_checkpoint_path: "cnn2_9154.ckpt-11600_bnfused"
+all_model_checkpoint_paths: "cnn2_9154.ckpt-11600_bnfused"

@@ -1,0 +1,76 @@
+训练指令
+--model_architecture dnn ；DNN类型模型
+--model_size_info 144 144 144 ；DNN模型结构 全连接层 神经元数量144 共3层。
+--dct_coefficient_count 10；DTC维数 DCT后保留的系数个数 10
+--window_size_ms 40；处理的音频窗口帧长，40ms
+--window_stride_ms 40；帧移滑动帧长 ，40ms
+--learning_rate 0.0005,0.0001,0.00002；训练的精度参数 无需修改。
+--how_many_training_steps 4,4,4；训练的迭代次数，文件数量样本。与训练时间关系很大。
+它的意思是用learning_rate 0.0005训练4个minibatch，然后再用0.0001训练4个minibatch，然后再用0.0002训练4个minibatch
+--summaries_dir work/DNN/retrain_logs；训练日志保存目录。
+--train_dir work/DNN/training；训练后的事件参数保存地址。
+--wanted_words=yes,no；指定训练关键词，本例子yes，no。
+
+python train.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --learning_rate 0.0005,0.0001,0.00002 --how_many_training_steps 4,4,4 --summaries_dir work/DNN/retrain_logs --train_dir work/DNN/training --wanted_words=yes,no
+python train.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --learning_rate 0.0005,0.0001,0.00002 --how_many_training_steps 300,300,300 --summaries_dir work/DNN/retrain_logs --train_dir work/DNN/training --wanted_words=xiaorui
+
+*******************************************
+python train.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --learning_rate 0.0005,0.0001,0.00002 --how_many_training_steps 300,300,300 --summaries_dir work/DNN/retrain_logs --train_dir work/DNN/training --wanted_words=xiaorui,guandeng,kaideng
+python freeze.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DNN\training\best\dnn_10000.ckpt-400 --wanted_words=xiaorui,guandeng,kaideng --output_file work\DNN\xiaorui.pb 
+
+python label_wav.py  --graph work/DNN/dnn_xiaorui_guandeng.pb --labels work\DNN\training\dnn_labels.txt --wav  work\wav\no.wav
+python label_wav.py  --graph work/DNN/xiaorui.pb --labels work\DNN\training\dnn_labels.txt --wav /wav/test/guandeng_t1.wav
+python quant_test.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DNN\training\best\dnn_10000.ckpt-400 --act_max 32 0 0  --data_dir /wav/ --wanted_words=xiaorui,guandeng,kaideng
+
+python quant_test.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DNN\training\best\dnn_10000.ckpt-400 --act_max 144 144 144 0 0 0  --data_dir /wav/ --wanted_words=xiaorui,guandeng,kaideng
+python quant_test.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DNN\training\best\dnn_10000.ckpt-400 --act_max 32 0 0 0 0 0  --data_dir /wav/ --wanted_words=xiaorui,guandeng,kaideng
+
+产生模型文件dnn_yesno.pb 存放到指定work\DNN\路径下
+python freeze.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DNN\training\best\dnn_9336.ckpt-8400 --wanted_words=yes,no --output_file work\DNN\dnn_yesno.pb 
+
+
+验证测试wav文件模型识别。
+python label_wav.py  --graph work/DNN/dnn_yesno.pb --labels work\DNN\training\dnn_labels.txt --wav  work\wav\no.wav
+
+量化int8，保存weights.h文件,注意会提示xrange 报错，是python版本问题引起的，改成range即可解决。
+python quant_test.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DNN\training\best\dnn_9336.ckpt-8400 --act_max 32 0 0 0 0 0 --wanted_words=yes,no
+
+***********************************************************
+python train.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --learning_rate 0.0005,0.0001,0.00002 --how_many_training_steps 1000,1000,1000 --summaries_dir work/DNN/retrain_logs --train_dir work/DNN/training --wanted_words=xiaorui,guandeng,kaideng
+python freeze.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DNN\training\best\dnn_9166.ckpt-400 --wanted_words=xiaorui,guandeng,kaideng --output_file work\DNN\xiaorui.pb 
+python label_wav.py  --graph work/DNN/xiaorui.pb --labels work\DNN\training\dnn_labels.txt --wav /wav/test/guandeng_t1.wav
+python quant_test.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DNN\training\best\dnn_9166.ckpt-400 --act_max 32 0 0 0 0 0 --wanted_words=xiaorui,guandeng,kaideng
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+python train.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --learning_rate 0.0005,0.0001,0.00002 --how_many_training_steps 1000,1000,1000 --summaries_dir work/DNN/retrain_logs --train_dir work/DNN/training --wanted_words=yes,no,up,down,left,right,on,off,stop,go
+python freeze.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DNN\training\best\dnn_9580.ckpt-2800 --wanted_words=yes --output_file work\DNN\yes.pb 
+python label_wav.py  --graph work/DNN/yes.pb --labels work\DNN\training\dnn_labels.txt --wav /wav/test/guandeng_t1.wav
+python quant_test.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DNN\training\best\dnn_9580.ckpt-2800 --act_max 32 0 0 0 0 0 --wanted_words=yes
+
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+
+
+
+
+python train.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --learning_rate 0.0005,0.0001,0.00002 --how_many_training_steps 4,4,4 --summaries_dir work/DNN/retrain_logs --train_dir work/DNN/training --wanted_words=xiaorui,guandeng
+python freeze.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DNN\training\best\dnn_9336.ckpt-8400 --wanted_words=xiaorui,kaideng,guandeng --output_file work\DNN\dnn_xiaorui.pb 
+
+python freeze.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DNN\training\best\dnn_8571.ckpt-400 --wanted_words=xiaorui --output_file work\DNN\dnn_xiaorui.pb 
+python label_wav.py  --graph work/DNN/dnn_xiaorui.pb --labels work\DNN\training\dnn_labels.txt --wav  work\wav\xiaorui.wav
+python quant_test.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DNN\training\best\dnn_8571.ckpt-400 --act_max 32 0 0 0 0 0 --wanted_words=xiaorui
+
+**********************************************
+以下指令CNN训练有效
+python train.py --model_architecture ds_cnn --model_size_info 5 64 10 4 2 2 64 3 3 1 1 64 3 3 1 1 64 3 3 1 1 64 3 3 1 1 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 20 --learning_rate 0.0005,0.0001,0.00002 --how_many_training_steps 300,300,300 --summaries_dir work/DS_CNN/retrain_logs --train_dir work/DS_CNN/training --wanted_words=xiaorui,kaideng,guandeng
+python freeze.py --model_architecture ds_cnn --model_size_info 5 64 10 4 2 2 64 3 3 1 1 64 3 3 1 1 64 3 3 1 1 64 3 3 1 1 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 20 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DS_CNN\training\best\ds_cnn_9166.ckpt-400 --wanted_words=xiaorui,kaideng,guandeng --output_file work\DS_CNN\xiaorui.pb 
+python label_wav.py  --graph work/DS_CNN/xiaorui.pb --labels work\DS_CNN\training\ds_cnn_labels.txt --wav /wav/test/guandeng_t1.wav
+
+python fold_batchnorm.py --model_architecture ds_cnn --model_size_info 5 64 10 4 2 2 64 3 3 1 1 64 3 3 1 1 64 3 3 1 1 64 3 3 1 1 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 20  --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DS_CNN\training\best\ds_cnn_9166.ckpt-400 --act_max 32 0 0 0 0 0 --wanted_words=xiaorui,kaideng,guandeng
+
+python quant_test.py --model_architecture ds_cnn --model_size_info 5 64 10 4 2 2 64 3 3 1 1 64 3 3 1 1 64 3 3 1 1 64 3 3 1 1 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 20  --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DS_CNN\training\best\ds_cnn_9166.ckpt-400_bnfused --act_max 32 0 0 0 0 0 0 0 0 0 0 0  --wanted_words=xiaorui,kaideng,guandeng
+
+
+python fold_batchnorm.py --model_architecture dnn --model_size_info 144 144 144 --dct_coefficient_count 10 --window_size_ms 40 --window_stride_ms 40 --checkpoint=D:\home\KWS_DEMO\ML-KWS-for-MCU-master\work\DS_CNN\training\best\ds_cnn_9166.ckpt-400 --act_max 32 0 0 0 0 0 --wanted_words=xiaorui,kaideng,guandeng
